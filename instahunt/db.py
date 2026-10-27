@@ -41,10 +41,22 @@ def init_db(db_path: Path = DEFAULT_DB_PATH) -> None:
                 rejection_reason TEXT,
                 evidence TEXT,
                 profile_url TEXT,
+                authenticity_score REAL DEFAULT NULL,
+                quality_grade TEXT DEFAULT NULL,
                 created_at TEXT,
                 updated_at TEXT
             )
         """)
+
+        # Migration: Add columns if table already existed without them
+        try:
+            cursor.execute("ALTER TABLE profiles ADD COLUMN authenticity_score REAL DEFAULT NULL")
+        except sqlite3.OperationalError:
+            pass
+        try:
+            cursor.execute("ALTER TABLE profiles ADD COLUMN quality_grade TEXT DEFAULT NULL")
+        except sqlite3.OperationalError:
+            pass
 
         # Table: discovery_queue (BFS queue with priority ordering)
         cursor.execute("""
@@ -185,8 +197,8 @@ def upsert_profile(profile_data: Dict, db_path: Path = DEFAULT_DB_PATH) -> None:
                 username, full_name, biography, followers_count, posts_count,
                 avg_comments, post_locations, detected_city, city_tier,
                 is_skincare, status, rejection_reason, evidence, profile_url,
-                created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                authenticity_score, quality_grade, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(username) DO UPDATE SET
                 full_name = excluded.full_name,
                 biography = excluded.biography,
@@ -201,6 +213,8 @@ def upsert_profile(profile_data: Dict, db_path: Path = DEFAULT_DB_PATH) -> None:
                 rejection_reason = excluded.rejection_reason,
                 evidence = excluded.evidence,
                 profile_url = excluded.profile_url,
+                authenticity_score = COALESCE(excluded.authenticity_score, profiles.authenticity_score),
+                quality_grade = COALESCE(excluded.quality_grade, profiles.quality_grade),
                 updated_at = excluded.updated_at
             """,
             (
@@ -218,6 +232,8 @@ def upsert_profile(profile_data: Dict, db_path: Path = DEFAULT_DB_PATH) -> None:
                 profile_data.get("rejection_reason", ""),
                 profile_data.get("evidence", ""),
                 profile_data.get("profile_url", f"https://www.instagram.com/{clean_u}/"),
+                profile_data.get("authenticity_score"),
+                profile_data.get("quality_grade"),
                 now,
                 now,
             ),

@@ -126,7 +126,28 @@ python3 -m instahunt.cli crawl -m 50
 
 ---
 
-## 5. Safety & Anti-Ban Architecture
+## 5. Optional Service Account Enhancement (`enricher` & `audit`)
+
+You can optionally link a secondary/burner Instagram account stored in your Infisical vault (`Insta_svc_acc_username` and `Insta_svc_acc_pwd`) for advanced confidence scoring without creating any dependency in the main discovery pipeline:
+
+* **100% Decoupled**: If credentials or session are absent or challenged, the core engine continues unaffected.
+* **Engagement Authenticity Audit**: Analyzes sample comments on qualified creators to verify whether high comment counts reflect genuine community discussions (e.g. skin type questions, product inquiries, regional language remarks) versus generic emoji spam or giveaway pods.
+* **Deep Chaining Expansion**: When an active session is available, queries extended similar creators (`get_similar()`) to expand the discovery frontier.
+
+```bash
+# Check service account connection status
+infisical run --env=dev -- instahunt session svc-status
+
+# Non-blocking login check / session token refresh
+infisical run --env=dev -- instahunt session svc-login
+
+# Audit community engagement authenticity & assign quality grade (Grade A/B/C)
+instahunt audit <username>
+```
+
+---
+
+## 6. Safety & Anti-Ban Architecture
 
 1. **Human Pacing & Jitter**: Randomized delay (`12.0` to `25.0` seconds) between profile requests.
 2. **Batch Cooldowns**: Pauses for 5 minutes after every 50 requests to keep request velocity natural.

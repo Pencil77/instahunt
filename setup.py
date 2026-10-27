@@ -12,6 +12,7 @@ setup(
         "requests>=2.28.0",
         "openpyxl>=3.1.0",
         "pydantic>=2.0.0",
+        "instaloader>=4.10.0",
     ],
     entry_points={
         "console_scripts": [
