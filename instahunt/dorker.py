@@ -6,7 +6,7 @@ bypassing Instagram rate limits and account risk during discovery.
 
 import re
 import urllib.parse
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Optional, Set
 import requests
 
 from instahunt.config import INDIAN_TIER2_TIER3_CITIES
@@ -18,16 +18,25 @@ IGNORED_PATHS = {
 
 
 class SearchDorker:
-    def __init__(self, user_agent: str = None):
+    def __init__(self, user_agent: Optional[str] = None, ai_engine: Optional[Any] = None):
         self.user_agent = user_agent or (
             "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
             "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         )
         self.session = requests.Session()
         self.session.headers.update({"User-Agent": self.user_agent})
+        self.ai_engine = ai_engine
 
-    def generate_dork_queries(self, target_cities: List[str] = None, max_queries: int = 20) -> List[Dict]:
+    def generate_dork_queries(
+        self,
+        target_cities: Optional[List[str]] = None,
+        max_queries: int = 20,
+        use_ai: bool = False,
+    ) -> List[Dict]:
         """Generate targeted dork queries for Tier 2 and Tier 3 cities."""
+        if use_ai and self.ai_engine and hasattr(self.ai_engine, "generate_smart_dorks"):
+            return self.ai_engine.generate_smart_dorks(cities=target_cities, max_queries=max_queries)
+
         queries = []
         cities = target_cities or list(INDIAN_TIER2_TIER3_CITIES.keys())
 

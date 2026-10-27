@@ -19,12 +19,14 @@ from instahunt.config import BASE_DIR, DEFAULT_DB_PATH, DEFAULT_SHEET_PATH
 from instahunt.crawler import BFSCrawler
 from instahunt.db import (
     enqueue_profiles,
+    get_profile,
     get_qualified_profiles,
     get_stats,
     init_db,
 )
 from instahunt.dorker import SearchDorker
 from instahunt.exporter import SheetExporter
+from instahunt.intelligence import AIIntelligenceEngine
 from instahunt.resolver import LocationResolver
 from instahunt.sieve import DeterministicSieve
 
@@ -357,6 +359,152 @@ def bundle(output):
     console.print(f"  tar -xzf instahunt-mobile.tar.gz && cd instahunt")
     console.print(f"  pip install click rich requests openpyxl pydantic")
     console.print(f"  python3 -m instahunt.cli crawl --simulation")
+
+
+@cli.group(name="ai")
+def ai_group():
+    """AI Intelligence Layer: Multi-provider LLM reasoning & enrichment."""
+    pass
+
+
+@ai_group.command(name="test")
+def ai_test():
+    """Test connectivity, latency, and status across all AI providers."""
+    console.print(Panel.fit("[bold cyan]AI Intelligence Multi-Provider Health Check[/bold cyan]", border_style="cyan"))
+    
+    engine = AIIntelligenceEngine()
+    results = engine.health_check()
+
+    table = Table(title="LLM Provider Connectivity Matrix", border_style="cyan", show_lines=True)
+    table.add_column("Provider", style="bold white", width=14)
+    table.add_column("Configured", justify="center", width=12)
+    table.add_column("Status", justify="center", width=12)
+    table.add_column("Latency (ms)", justify="right", width=14)
+    table.add_column("Details / Model", style="dim", width=42)
+
+    for prov, info in results.items():
+        conf_str = "[green]YES[/green]" if info["configured"] else "[dim red]NO[/dim red]"
+        if info["status"] == "healthy":
+            stat_str = "[bold green]HEALTHY[/bold green]"
+        elif info["status"] == "error":
+            stat_str = "[bold red]ERROR[/bold red]"
+        else:
+            stat_str = "[dim yellow]STANDBY[/dim yellow]"
+
+        lat_str = f"{info['latency_ms']} ms" if info["latency_ms"] is not None else "-"
+        table.add_row(prov.upper(), conf_str, stat_str, lat_str, str(info["message"])[:40])
+
+    console.print(table)
+
+
+@ai_group.command(name="disambiguate")
+@click.argument("target")
+def ai_disambiguate(target):
+    """Disambiguate creator geography & Tier 2/3 classification (accepts handle or bio text)."""
+    engine = AIIntelligenceEngine()
+    clean_target = target.strip().replace("@", "")
+    
+    profile = get_profile(clean_target)
+    if profile:
+        console.print(f"[cyan]Evaluating stored database profile @{clean_target}...[/cyan]")
+        bio = profile.get("biography", "")
+        import json
+        try:
+            locs = json.loads(profile.get("post_locations", "[]"))
+        except Exception:
+            locs = []
+        username = clean_target
+    else:
+        console.print(f"[cyan]Evaluating ad-hoc bio/text query: '{target}'...[/cyan]")
+        bio = target
+        locs = []
+        username = "manual_query"
+
+    analysis = engine.disambiguate_location(username=username, bio=bio, post_locations=locs)
+    
+    table = Table(title=f"Location Disambiguation: @{username}", border_style="magenta", show_lines=True)
+    table.add_column("Attribute", style="bold white", width=22)
+    table.add_column("Value", style="bold green", width=50)
+
+    table.add_row("Detected City", str(analysis.detected_city))
+    table.add_row("Detected State", str(analysis.detected_state))
+    table.add_row("City Tier", str(analysis.city_tier))
+    table.add_row("Target (Tier 2/3)", "[bold green]YES[/bold green]" if analysis.is_tier2_tier3 else "[bold red]NO[/bold red]")
+    table.add_row("Confidence", f"{analysis.confidence * 100:.1f}%")
+    table.add_row("Evidence", analysis.evidence)
+    table.add_row("Provider Used", analysis.provider_used.upper())
+
+    console.print(table)
+
+
+@ai_group.command(name="audit")
+@click.argument("username")
+def ai_audit(username):
+    """Perform deep AI skincare niche and community quality audit on a creator."""
+    clean_u = username.strip().lower().replace("@", "")
+    profile = get_profile(clean_u)
+    
+    engine = AIIntelligenceEngine()
+
+    if profile:
+        bio = profile.get("biography", "")
+        avg_c = profile.get("avg_comments", 0.0)
+    else:
+        console.print(f"[yellow]Profile @{clean_u} not found in local DB. Running synthetic baseline audit...[/yellow]")
+        bio = f"Skincare enthusiast & honest product reviewer. Living in Indore."
+        avg_c = 125.0
+
+    # Sample comments for audit test
+    sample_comments = [
+        "Does this moisturizer suit oily acne-prone skin?",
+        "Where did you buy this in Indore?",
+        "Price kitna hai iska?",
+        "🔥❤️",
+        "Please review the Foxtale ceramide barrier cream next!",
+        "Love this honest review di!",
+    ]
+
+    niche = engine.assess_skincare_niche(clean_u, bio=bio)
+    comm = engine.assess_community_quality(clean_u, sample_comments, avg_comments=avg_c)
+
+    table = Table(title=f"AI Deep Audit Report: @{clean_u}", border_style="green", show_lines=True)
+    table.add_column("Audit Metric", style="bold white", width=24)
+    table.add_column("Score / Result", style="bold cyan", width=48)
+
+    table.add_row("Is Skincare Focused", "[green]YES[/green]" if niche.is_skincare_creator else "[red]NO[/red]")
+    table.add_row("Niche Concentration Score", f"{niche.niche_score * 100:.1f}%")
+    table.add_row("Primary Focus", niche.primary_focus)
+    table.add_row("Vernacular Signals", ", ".join(niche.vernacular_signals) if niche.vernacular_signals else "None detected")
+    table.add_row("Community Quality Grade", f"[bold green]{comm.community_grade}[/bold green]")
+    table.add_row("Engagement Authenticity", f"{comm.authenticity_score * 100:.1f}%")
+    table.add_row("Estimated Spam/Pod Ratio", f"{comm.spam_pod_ratio * 100:.1f}%")
+    table.add_row("Audit Summary", comm.summary)
+
+    console.print(table)
+
+
+@ai_group.command(name="dorks")
+@click.option("--city", "-c", multiple=True, help="Target Indian city")
+@click.option("--brand", "-b", multiple=True, help="Target skincare brand")
+@click.option("--max-queries", "-m", default=8, help="Maximum dorks to generate")
+def ai_dorks(city, brand, max_queries):
+    """Generate high-yield regional skincare dork queries."""
+    engine = AIIntelligenceEngine()
+    cities_list = list(city) if city else None
+    brands_list = list(brand) if brand else None
+
+    dorks = engine.generate_smart_dorks(cities=cities_list, brands=brands_list, max_queries=max_queries)
+
+    table = Table(title="AI-Curated Regional Search Dorks", border_style="cyan", show_lines=True)
+    table.add_column("#", justify="right", style="bold", width=4)
+    table.add_column("City", style="bold green", width=14)
+    table.add_column("Context / Brand", style="yellow", width=18)
+    table.add_column("Dork Query", style="bold white", width=45)
+
+    for i, d in enumerate(dorks, 1):
+        table.add_row(str(i), d["city"], d.get("brand_context", "Skincare"), d["query"])
+
+    console.print(table)
 
 
 def main():

@@ -253,6 +253,16 @@ def is_profile_seen(username: str, db_path: Path = DEFAULT_DB_PATH) -> bool:
         return bool(cursor.fetchone())
 
 
+def get_profile(username: str, db_path: Path = DEFAULT_DB_PATH) -> Optional[Dict]:
+    """Retrieve a single profile record by username."""
+    clean_u = username.strip().lower().replace("@", "")
+    with get_db_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM profiles WHERE username = ?", (clean_u,))
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+
 def get_qualified_profiles(db_path: Path = DEFAULT_DB_PATH) -> List[Dict]:
     """Retrieve all qualified profiles for export."""
     with get_db_connection(db_path) as conn:

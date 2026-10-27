@@ -6,7 +6,7 @@ and deep recommendation graph expansion.
 
 import re
 from dataclasses import dataclass
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 
 @dataclass
@@ -35,7 +35,8 @@ SPAM_PATTERNS = [
 
 
 class CommentQualityAuditor:
-    def __init__(self):
+    def __init__(self, ai_engine: Optional[Any] = None):
+        self.ai_engine = ai_engine
         self.genuine_re = [re.compile(p, re.IGNORECASE) for p in GENUINE_COMMENT_PATTERNS]
         self.spam_re = [re.compile(p, re.IGNORECASE) for p in SPAM_PATTERNS]
 
@@ -92,3 +93,21 @@ class CommentQualityAuditor:
             spam_signals_count=spam_hits,
             summary=summary,
         )
+
+    def audit_creator_deep(
+        self, username: str, comments: List[str], avg_comments: float = 0.0
+    ) -> EnrichmentResult:
+        """
+        Perform deep multi-layer community audit:
+        Uses LLM intelligence if available; falls back to fast pattern matching.
+        """
+        if self.ai_engine and hasattr(self.ai_engine, "assess_community_quality") and self.ai_engine.is_available():
+            audit = self.ai_engine.assess_community_quality(username, comments, avg_comments)
+            return EnrichmentResult(
+                authenticity_score=audit.authenticity_score,
+                quality_grade=audit.community_grade,
+                genuine_signals_count=int(len(comments) * (1.0 - audit.spam_pod_ratio)),
+                spam_signals_count=int(len(comments) * audit.spam_pod_ratio),
+                summary=audit.summary,
+            )
+        return self.audit_sample_comments(comments)

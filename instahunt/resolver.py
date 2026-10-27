@@ -99,26 +99,53 @@ class LocationResolver:
                         evidence=f"Found hashtag/regional reference for {tier} city '{capitalized_city}' in captions",
                     )
 
-        # Step 4: Fallback to LLM if configured
+        # Step 4: Fallback to AI Engine if configured
         if self.llm_client and self.llm_client.is_available():
-            llm_result = self.llm_client.classify_profile(
-                username=profile_data.get("username", ""),
-                bio=bio,
-                post_locations=post_locations,
-                recent_captions=[p.get("caption", "")[:300] for p in posts[:5]],
-            )
-            if llm_result:
-                city = llm_result.get("detected_city")
-                tier = llm_result.get("city_tier", "Unknown")
-                is_qual = tier in ("Tier 2", "Tier 3") and llm_result.get("is_skincare_creator", False)
-                return ResolutionResult(
-                    is_qualified=is_qual,
-                    detected_city=city,
-                    city_tier=tier,
-                    state=llm_result.get("detected_state"),
-                    confidence=0.80,
-                    evidence=f"LLM Classification: {llm_result.get('evidence', '')}",
+            # Check if it's an AIIntelligenceEngine or legacy wrapper
+            if hasattr(self.llm_client, "disambiguate_location"):
+                loc_res = self.llm_client.disambiguate_location(
+                    username=profile_data.get("username", ""),
+                    bio=bio,
+                    post_locations=post_locations,
+                    recent_captions=[p.get("caption", "")[:250] for p in posts[:4]],
                 )
+                if loc_res.is_tier2_tier3 and loc_res.detected_city:
+                    return ResolutionResult(
+                        is_qualified=True,
+                        detected_city=loc_res.detected_city,
+                        city_tier=loc_res.city_tier,
+                        state=loc_res.detected_state,
+                        confidence=loc_res.confidence,
+                        evidence=loc_res.evidence,
+                    )
+                elif loc_res.city_tier == "Tier 1":
+                    return ResolutionResult(
+                        is_qualified=False,
+                        detected_city=loc_res.detected_city,
+                        city_tier="Tier 1",
+                        state=loc_res.detected_state,
+                        confidence=loc_res.confidence,
+                        evidence=loc_res.evidence,
+                    )
+            elif hasattr(self.llm_client, "classify_profile"):
+                llm_result = self.llm_client.classify_profile(
+                    username=profile_data.get("username", ""),
+                    bio=bio,
+                    post_locations=post_locations,
+                    recent_captions=[p.get("caption", "")[:300] for p in posts[:5]],
+                )
+                if llm_result:
+                    city = llm_result.get("detected_city")
+                    tier = llm_result.get("city_tier", "Unknown")
+                    is_qual = tier in ("Tier 2", "Tier 3") and llm_result.get("is_skincare_creator", False)
+                    return ResolutionResult(
+                        is_qualified=is_qual,
+                        detected_city=city,
+                        city_tier=tier,
+                        state=llm_result.get("detected_state"),
+                        confidence=0.80,
+                        evidence=f"LLM Classification: {llm_result.get('evidence', '')}",
+                    )
 
         # Step 5: Unresolved Location
         return ResolutionResult(
