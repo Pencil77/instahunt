@@ -18,7 +18,13 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-from instahunt.config import INDIAN_TIER2_TIER3_CITIES, TIER1_METROS
+from instahunt.config import (
+    DISQUALIFYING_NICHE_KEYWORDS,
+    INDIAN_TIER2_TIER3_CITIES,
+    REGIONAL_SKINCARE_MARKERS,
+    SKINCARE_KEYWORDS,
+    TIER1_METROS,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -474,7 +480,7 @@ Rules:
         )
 
     # --------------------------------------------------------------------------
-    # 2. Skincare Niche & Vernacular Disambiguation
+    # 2. Skincare Niche & Vernacular Disambiguation (Strict Exclusivity + Pan-India)
     # --------------------------------------------------------------------------
     def assess_skincare_niche(
         self,
@@ -484,34 +490,38 @@ Rules:
         hashtags: Optional[List[str]] = None,
     ) -> NicheAnalysis:
         """
-        Evaluate skincare niche concentration and vernacular/Hinglish authenticity:
-        - Recognizes regional vernacular (ghar ke nuskhe, haldi ubtan, besan pack, skin care routine hindi).
-        - Separates dedicated skincare reviewers from general fashion/lifestyle accounts with sporadic ads.
+        Evaluate skincare niche concentration and vernacular/regional authenticity:
+        - Strict Niche Exclusivity: Requires dedication to skincare (ingredients, barrier, reviews, acne).
+          Rejects general fashion, lifestyle, bridal MUA, vlogging, and nutrition.
+        - Pan-India Scope: Recognizes that creators across South (Tamil, Telugu, Malayalam, Kannada),
+          West (Gujarati, Marathi), East (Bengali, Odia), and North post in English, Hinglish, or regional terms.
         """
         recent_captions = recent_captions or []
         hashtags = hashtags or []
 
-        prompt = f"""You are a content auditor evaluating whether an Instagram account is genuinely focused on skincare.
+        prompt = f"""You are a strict creator auditor evaluating whether an Instagram account is EXCLUSIVELY focused on skincare.
 Creator: @{username}
 Bio: {bio or 'N/A'}
 Sample Captions: {' | '.join(c[:140] for c in recent_captions[:4]) if recent_captions else 'N/A'}
 Hashtags: {', '.join(hashtags[:15]) if hashtags else 'N/A'}
 
-Analyze:
-1. Is this creator primarily focused on skincare (product reviews, ingredient education, skin issues like acne/pigmentation, routines, or natural/regional DIY remedies)?
-2. Note any Indian vernacular / Hinglish terms used (e.g. 'ghar ke nuskhe', 'ubtan', 'dahi besan', 'haldi', 'acne marks', 'dermat', etc.).
-3. Return ONLY a valid JSON object:
+CRITICAL CLIENT CRITERIA:
+1. STRICT EXCLUSIVITY: The account MUST be exclusively dedicated to skincare (cosmetic chemistry, ingredients like niacinamide/retinol/ceramides, barrier repair, acne/hyperpigmentation routines, product reviews, sunscreens, or herbal/ayurvedic facial skincare).
+2. DISQUALIFICATIONS: If this creator is primarily a general beauty creator, fashion/OOTD blogger, bridal makeup artist (MUA), daily/travel vlogger, lifestyle influencer, fitness coach, or nutritionist/dietitian with occasional skincare posts, set "is_skincare_creator" to FALSE.
+3. PAN-INDIA REGIONAL SCOPE: Creators in Indian Tier 2 & Tier 3 cities across South (Tamil Nadu, Kerala, Karnataka, Andhra), West (Gujarat, Maharashtra), East (Bengal, Odisha), and North write primarily in English or regional bilingual formats. DO NOT penalize non-Hindi or English language creators.
+
+Return ONLY a valid JSON object:
 {{
   "is_skincare_creator": true | false,
   "niche_score": 0.0 to 1.0,
-  "primary_focus": "e.g. Dermatology & Product Reviews / DIY Indian Skincare / General Lifestyle",
+  "primary_focus": "e.g. Pure Skincare & Ingredients / General Fashion / Lifestyle Vlogger / Bridal MUA",
   "vernacular_signals": ["term1", "term2"],
-  "summary": "1-sentence assessment"
+  "summary": "1-sentence assessment explaining qualification or disqualification"
 }}"""
 
         content, provider = self.chat_completion(
             messages=[
-                {"role": "system", "content": "You are a strict creator niche qualification assistant outputting JSON."},
+                {"role": "system", "content": "You are a strict, objective creator qualification auditor outputting JSON only."},
                 {"role": "user", "content": prompt},
             ],
             max_tokens=600,
@@ -534,28 +544,50 @@ Analyze:
 
     def _fallback_niche_assessment(self, bio: str, captions: List[str]) -> NicheAnalysis:
         text = f"{bio} {' '.join(captions)}".lower()
-        vernacular_terms = [
-            "ghar ke nuskhe", "ubtan", "haldi", "besan", "neem",
-            "skin care hindi", "dermat", "acne journey", "pimple",
-        ]
-        found_signals = [t for t in vernacular_terms if t in text]
 
-        core_skincare_keywords = [
-            "skincare", "skin care", "sunscreen", "serum", "retinol",
-            "niacinamide", "salicylic", "hyaluronic", "dermatologist",
-            "moisturizer", "barrier repair", "cleanser",
-        ]
-        matches = sum(1 for kw in core_skincare_keywords if kw in text)
+        # Check disqualifying niche keywords
+        for dq in DISQUALIFYING_NICHE_KEYWORDS:
+            if re.search(r"\b" + re.escape(dq) + r"\b", text):
+                return NicheAnalysis(
+                    is_skincare_creator=False,
+                    niche_score=0.1,
+                    primary_focus=f"Disqualified Niche ({dq})",
+                    vernacular_signals=[],
+                    summary=f"Disqualified: content focuses on '{dq}' rather than exclusive skincare",
+                    provider_used="rule-based",
+                )
 
-        is_skincare = matches >= 2 or len(found_signals) >= 1
-        score = min(0.95, 0.4 + (matches * 0.15) + (len(found_signals) * 0.1))
+        # Collect regional signals across South, West, East, North, and English
+        found_signals = []
+        for lang, markers in REGIONAL_SKINCARE_MARKERS.items():
+            for m in markers:
+                if re.search(r"\b" + re.escape(m) + r"\b", text):
+                    found_signals.append(m)
+
+        # Collect core skincare terms
+        core_skincare_matches = [
+            kw for kw in SKINCARE_KEYWORDS if re.search(r"\b" + re.escape(kw) + r"\b", text)
+        ]
+
+        has_bio_skincare = any(
+            re.search(r"\b" + re.escape(kw) + r"\b", bio.lower())
+            for kw in SKINCARE_KEYWORDS
+        )
+
+        # Require pure skincare focus: either bio is dedicated to skincare OR at least 3 distinct active terms
+        is_skincare = has_bio_skincare or len(core_skincare_matches) >= 3
+        if is_skincare:
+            raw_score = 0.50 + (0.15 if has_bio_skincare else 0.0) + (len(core_skincare_matches) * 0.08) + (len(found_signals) * 0.08)
+            score = max(0.70, min(0.95, raw_score))
+        else:
+            score = 0.20
 
         return NicheAnalysis(
             is_skincare_creator=is_skincare,
             niche_score=round(score, 2) if is_skincare else 0.2,
-            primary_focus="Skincare & Beauty" if is_skincare else "General / Non-Skincare",
-            vernacular_signals=found_signals,
-            summary=f"Rule-based matched {matches} core skincare terms and {len(found_signals)} vernacular signals",
+            primary_focus="Dedicated Skincare" if is_skincare else "Non-Exclusive / General",
+            vernacular_signals=found_signals[:5],
+            summary=f"Rule-based matched {len(core_skincare_matches)} skincare terms (Bio dedicated: {has_bio_skincare})",
             provider_used="rule-based",
         )
 

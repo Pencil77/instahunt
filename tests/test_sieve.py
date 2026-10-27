@@ -82,3 +82,83 @@ def test_sieve_qualified_candidate():
     assert res.avg_comments == 130.0
     assert res.is_skincare
     assert not res.has_tier1_match
+
+
+def test_sieve_disqualifies_non_exclusive_niches():
+    sieve = DeterministicSieve(min_avg_comments=100)
+    
+    # 1. Lifestyle vlogger
+    p1 = {
+        "full_name": "Meenu",
+        "biography": "Daily vlogs, lifestyle creator & family moments in Bhopal",
+        "timeline_posts": [
+            {"comments_count": 150, "is_pinned": False, "caption": "My morning skincare and daily vlog"},
+        ],
+    }
+    res1 = sieve.evaluate(p1)
+    assert not res1.passed
+    assert "disqualified_niche" in res1.rejection_reason
+
+    # 2. Bridal MUA
+    p2 = {
+        "full_name": "Kanishka",
+        "biography": "Bridal makeup artist & MUA Jaipur. Bookings open for weddings.",
+        "timeline_posts": [
+            {"comments_count": 220, "is_pinned": False, "caption": "Bridal glow skincare prep"},
+        ],
+    }
+    res2 = sieve.evaluate(p2)
+    assert not res2.passed
+    assert "disqualified_niche" in res2.rejection_reason
+
+    # 3. Nutritionist
+    p3 = {
+        "full_name": "Sarah",
+        "biography": "Clinical nutritionist and dietitian in Chandigarh. Weight loss plans.",
+        "timeline_posts": [
+            {"comments_count": 140, "is_pinned": False, "caption": "Diet for glowing skin and acne"},
+        ],
+    }
+    res3 = sieve.evaluate(p3)
+    assert not res3.passed
+    assert "disqualified_niche" in res3.rejection_reason
+
+    # 4. Mens grooming & fashion
+    p4 = {
+        "full_name": "Dhamo",
+        "biography": "Mens grooming & style blogger Coimbatore. OOTD & beard care.",
+        "timeline_posts": [
+            {"comments_count": 250, "is_pinned": False, "caption": "Daily sunscreen for men"},
+        ],
+    }
+    res4 = sieve.evaluate(p4)
+    assert not res4.passed
+    assert "disqualified_niche" in res4.rejection_reason
+
+
+def test_sieve_pan_india_regional_skincare():
+    sieve = DeterministicSieve(min_avg_comments=100)
+
+    # South India (Tamil Nadu) - English/Tamil skincare terms
+    p_tamil = {
+        "full_name": "Keerthi Skin Lab",
+        "biography": "Coimbatore | Pharmacy skincare & barrier repair tips 🧴 #tamilskincare",
+        "timeline_posts": [
+            {"comments_count": 180, "is_pinned": False, "caption": "Niacinamide serum for acne prone skin. Best budget finds in Tamil Nadu."},
+        ],
+    }
+    res_tamil = sieve.evaluate(p_tamil)
+    assert res_tamil.passed
+    assert res_tamil.is_skincare
+
+    # West India (Gujarat) - Gujarati/English skincare
+    p_gujarat = {
+        "full_name": "Rutu Patel",
+        "biography": "Surat | Dedicated skincare reviewer, sunscreen testing & ceramides ✨ #gujaratskincare",
+        "timeline_posts": [
+            {"comments_count": 160, "is_pinned": False, "caption": "Chamakti twacha and barrier restoration guide for dry skin in Surat."},
+        ],
+    }
+    res_gujarat = sieve.evaluate(p_gujarat)
+    assert res_gujarat.passed
+    assert res_gujarat.is_skincare

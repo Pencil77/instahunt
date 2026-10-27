@@ -9,8 +9,10 @@ from dataclasses import dataclass, field
 from typing import Dict, List, Optional
 
 from instahunt.config import (
+    DISQUALIFYING_NICHE_KEYWORDS,
     EXCLUDE_PINNED_POSTS,
     MIN_AVG_COMMENTS,
+    REGIONAL_SKINCARE_MARKERS,
     SAMPLE_POSTS_COUNT,
     SKINCARE_KEYWORDS,
     TIER1_METROS,
@@ -48,10 +50,27 @@ class DeterministicSieve:
             re.IGNORECASE,
         )
 
-        # Pre-compile regex for skincare keywords
+        # Pre-compile regex for strict disqualifying niche keywords
+        escaped_disqualifiers = [re.escape(k) for k in DISQUALIFYING_NICHE_KEYWORDS]
+        self.disqualifying_pattern = re.compile(
+            r"\b(" + "|".join(escaped_disqualifiers) + r")\b",
+            re.IGNORECASE,
+        )
+
+        # Pre-compile regex for core skincare keywords
         escaped_keywords = [re.escape(k) for k in SKINCARE_KEYWORDS]
         self.skincare_pattern = re.compile(
             r"\b(" + "|".join(escaped_keywords) + r")\b",
+            re.IGNORECASE,
+        )
+
+        # Pre-compile regex for Pan-Indian regional skincare markers
+        all_regional_markers = []
+        for marker_list in REGIONAL_SKINCARE_MARKERS.values():
+            all_regional_markers.extend(marker_list)
+        escaped_regional = [re.escape(m) for m in all_regional_markers]
+        self.regional_pattern = re.compile(
+            r"\b(" + "|".join(escaped_regional) + r")\b",
             re.IGNORECASE,
         )
 
@@ -68,7 +87,6 @@ class DeterministicSieve:
         posts = profile_data.get("timeline_posts", []) or []
 
         # 1. Comment Math Evaluation
-        # Filter posts
         eval_posts = posts
         if self.exclude_pinned:
             unpinned = [p for p in posts if not p.get("is_pinned", False)]
@@ -99,7 +117,6 @@ class DeterministicSieve:
             )
 
         # 2. Hard Tier 1 Metro Blacklist Evaluation
-        # Aggregate text from bio, full_name, and post locations
         locations = [p.get("location_name", "") for p in posts if p.get("location_name")]
         locations_text = " ".join(filter(None, locations))
         captions_text = " ".join(p.get("caption", "")[:200] for p in eval_posts if p.get("caption"))
@@ -121,11 +138,28 @@ class DeterministicSieve:
                 evidence=f"Matched Tier 1 blacklisted metro '{matched_name}' in bio/locations",
             )
 
-        # 3. Skincare Niche Relevance Evaluation
-        niche_corpus = f"{bio} {captions_text}".lower()
-        found_keywords = list(set(self.skincare_pattern.findall(niche_corpus)))
+        # 3. Strict Niche Exclusivity Disqualification Check
+        niche_corpus = f"{bio} {full_name} {captions_text}".lower()
+        disqualify_match = self.disqualifying_pattern.search(niche_corpus)
+        if disqualify_match:
+            matched_niche = disqualify_match.group(1).lower()
+            return SieveResult(
+                passed=False,
+                avg_comments=avg_comments,
+                total_posts_evaluated=total_evaluated,
+                is_skincare=False,
+                skincare_keywords_found=[],
+                has_tier1_match=False,
+                rejection_reason=f"disqualified_niche_{matched_niche}",
+                evidence=f"Disqualified for non-exclusive skincare niche marker '{matched_niche}' (client requires pure skincare exclusivity)",
+            )
 
-        if not found_keywords:
+        # 4. Skincare Niche Relevance & Density Evaluation
+        found_keywords = list(set(self.skincare_pattern.findall(niche_corpus)))
+        found_regional = list(set(self.regional_pattern.findall(niche_corpus)))
+        all_skincare_matches = list(set(found_keywords + found_regional))
+
+        if not all_skincare_matches:
             return SieveResult(
                 passed=False,
                 avg_comments=avg_comments,
@@ -137,14 +171,29 @@ class DeterministicSieve:
                 evidence="Zero skincare-related keywords found in bio or recent captions",
             )
 
+        # Check skincare density / bio dedication
+        bio_lower = f"{bio} {full_name}".lower()
+        has_skincare_in_bio = bool(self.skincare_pattern.search(bio_lower) or self.regional_pattern.search(bio_lower))
+        if not has_skincare_in_bio and len(all_skincare_matches) < 2:
+            return SieveResult(
+                passed=False,
+                avg_comments=avg_comments,
+                total_posts_evaluated=total_evaluated,
+                is_skincare=False,
+                skincare_keywords_found=all_skincare_matches,
+                has_tier1_match=False,
+                rejection_reason="low_skincare_density",
+                evidence=f"Only 1 casual skincare term found ('{all_skincare_matches[0]}') and bio lacks dedicated skincare focus",
+            )
+
         # Passed Pass 1 Sieve
         return SieveResult(
             passed=True,
             avg_comments=avg_comments,
             total_posts_evaluated=total_evaluated,
             is_skincare=True,
-            skincare_keywords_found=found_keywords,
+            skincare_keywords_found=all_skincare_matches,
             has_tier1_match=False,
             rejection_reason=None,
-            evidence=f"Passed sieve with {avg_comments:.1f} avg comments and keywords: {', '.join(found_keywords[:3])}",
+            evidence=f"Passed sieve with {avg_comments:.1f} avg comments and dedicated skincare markers: {', '.join(all_skincare_matches[:3])}",
         )

@@ -237,19 +237,71 @@ INDIAN_TIER2_TIER3_CITIES = {
     "imphal": ("Tier 3", "Manipur", []),
 }
 
-# Skincare Keywords for Relevance Scoring
+# Core Skincare Keywords for Relevance Scoring (Pan-India & English)
 SKINCARE_KEYWORDS = [
     "skincare", "skin care", "skincareroutine", "skin health", "skin barrier",
-    "glowing skin", "glowingskin", "acne", "acnetreatment", "hyperpigmentation",
-    "serum", "sunscreen", "moisturizer", "retinol", "niacinamide", "salicylic",
-    "hyaluronic", "dermatologist", "dermatology", "aesthetician", "esthetician",
-    "skinfluencer", "skincareblogger", "skincaretips", "skingoals", "kbeauty",
-    "cleanser", "toner", "face wash", "facewash", "exfoliat", "sheet mask",
-    "skin clinic", "skin aesthetic", "skin doctor", "skincarereview", "skin care tips"
+    "barrier repair", "sunscreen", "spf", "uv camera", "white cast", "sun protection",
+    "serum", "retinol", "niacinamide", "salicylic", "hyaluronic", "vitamin c",
+    "azelaic", "ceramides", "cica", "centella", "snail mucin", "glycolic",
+    "lactic acid", "double cleansing", "cleanser", "toner", "moisturizer",
+    "moisturiser", "face wash", "facewash", "acne", "cystic acne", "hormonal acne",
+    "comedones", "blackheads", "whiteheads", "dark spots", "hyperpigmentation",
+    "melasma", "skin texture", "glowing skin", "glowingskin", "glass skin",
+    "dermatologist", "dermatology", "aesthetician", "esthetician", "skin doctor",
+    "skin clinic", "skinfluencer", "skincareblogger", "skincaretips", "skingoals",
+    "skincarereview", "pharmacy skincare", "kbeauty", "jbeauty"
 ]
 
-# Exclusion Keywords (To downweight unrelated profiles)
-EXCLUSION_KEYWORDS = [
-    "car enthusiast", "tech reviews", "gaming", "standup comic", "cricket updates",
-    "stock market", "crypto", "real estate", "food vlog", "travel nomad"
+# Pan-Indian Regional Language Skincare Hashtags & Markers
+# Creators across South, West, East, and North India use these alongside English
+REGIONAL_SKINCARE_MARKERS = {
+    "all_india_english": [
+        "skincare india", "indian skincare", "pharmacy skincare india",
+        "budget skincare india", "dermatologist india", "acne prone skin india"
+    ],
+    "tamil": [
+        "tamilskincare", "skincaretamil", "tamil beauty tips", "mugam", "paru", "azhagu"
+    ],
+    "telugu": [
+        "teluguskincare", "skincaretelugu", "telugu beauty tips", "mukham", "merise chiram"
+    ],
+    "malayalam": [
+        "malayalamskincare", "skincaremalayalam", "kerala skincare", "soundaryam"
+    ],
+    "kannada": [
+        "kannadaskincare", "skincarekannada", "karnataka skincare"
+    ],
+    "marathi": [
+        "marathiskincare", "skincaremarathi", "maharashtra skincare", "nital tvacha"
+    ],
+    "gujarati": [
+        "gujaratskincare", "skincaregujarati", "twacha", "chamakti twacha"
+    ],
+    "bengali": [
+        "bengaliskincare", "skincarebengali", "rupchorcha"
+    ],
+    "punjabi": [
+        "punjabiskincare", "skincarepunjabi", "noor", "glowing chehra"
+    ],
+    "hindi_hinglish": [
+        "ghar ke nuskhe", "ubtan", "dahi besan", "haldi", "skin care hindi"
+    ],
+}
+
+# Strict Disqualification Keywords (Exclusivity Filter)
+# Accounts with these primary focuses are NOT exclusively skincare and MUST be rejected
+DISQUALIFYING_NICHE_KEYWORDS = [
+    "fashion blogger", "fashion creator", "fashion influencer", "fashion style", "fashion",
+    "ootd", "outfit of the day", "clothing brand", "model", "modeling",
+    "lifestyle creator", "lifestyle blogger", "lifestyle influencer", "lifestyle vlogs",
+    "lifestyle", "daily vlogs", "vlogger", "vlog", "vlogs", "travel blogger", "travel creator",
+    "wanderlust", "foodie", "food blogger", "food reviews", "recipe creator",
+    "bridal makeup", "bridal artist", "makeup artist", "mua", "hairstylist",
+    "hair stylist", "salon & spa", "beauty salon", "mens grooming", "grooming & style",
+    "grooming", "fitness model", "gym workout", "fitness coach", "dance reels", "dancer",
+    "choreographer", "comedy creator", "comedian", "acting", "actor",
+    "nutritionist", "dietitian", "clinical nutrition", "weight loss"
 ]
+
+# Legacy exclusion list
+EXCLUSION_KEYWORDS = DISQUALIFYING_NICHE_KEYWORDS
