@@ -86,6 +86,19 @@ class DeterministicSieve:
         full_name = profile_data.get("full_name", "") or ""
         posts = profile_data.get("timeline_posts", []) or []
 
+        # 0. Privacy Check: Private accounts are strictly ineligible
+        if profile_data.get("is_private") is True:
+            return SieveResult(
+                passed=False,
+                avg_comments=0.0,
+                total_posts_evaluated=0,
+                is_skincare=False,
+                skincare_keywords_found=[],
+                has_tier1_match=False,
+                rejection_reason="private_account",
+                evidence="Private account: profile content and reels cannot be publicly accessed or verified",
+            )
+
         # 1. Comment Math Evaluation
         eval_posts = posts
         if self.exclude_pinned:

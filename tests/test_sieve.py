@@ -2,6 +2,22 @@ import pytest
 from instahunt.sieve import DeterministicSieve
 
 
+def test_sieve_rejects_private_account():
+    sieve = DeterministicSieve(min_avg_comments=100)
+    profile = {
+        "full_name": "Private User",
+        "biography": "Skincare enthusiast in Jaipur",
+        "is_private": True,
+        "timeline_posts": [
+            {"comments_count": 200, "is_pinned": False, "caption": "Morning skincare routine"},
+        ],
+    }
+    res = sieve.evaluate(profile)
+    assert not res.passed
+    assert res.rejection_reason == "private_account"
+    assert "Private account" in res.evidence
+
+
 def test_sieve_low_comments():
     sieve = DeterministicSieve(min_avg_comments=100)
     profile = {

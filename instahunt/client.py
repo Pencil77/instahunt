@@ -459,6 +459,15 @@ class InstagramClient:
                 ],
                 "suggested_profiles": [],
             },
+            "private_test_creator": {
+                "full_name": "Private Personal User",
+                "biography": "Personal account. Skincare enthusiast in Jaipur.",
+                "followers_count": 450,
+                "posts_count": 20,
+                "is_private": True,
+                "timeline_posts": [],
+                "suggested_profiles": [],
+            },
         }
 
         if username in fixtures:
@@ -466,6 +475,7 @@ class InstagramClient:
             data["username"] = username
             data.setdefault("is_business_account", True)
             data.setdefault("category_name", "Creator")
+            data.setdefault("is_private", False)
             return data
 
         # Default generated fixture
