@@ -120,10 +120,13 @@ class SheetExporter:
     def append_qualified_to_sheet(
         self,
         output_path: Optional[Path] = None,
-        use_tracking_token: bool = True,
+        use_reels_format: bool = True,
     ) -> int:
         """
         Append all qualified profiles from SQLite into Sheet1 of the Excel workbook.
+        Client format explicitly documented in 'Example Profiles' row 22-23:
+        https://www.instagram.com/<username>/reels/
+        Sets clickable Hyperlink attribute on the cell.
         """
         target_path = Path(output_path) if output_path else self.sheet_path
         if not target_path.exists():
@@ -147,13 +150,14 @@ class SheetExporter:
         for p in qualified_profiles:
             u = p["username"].lower()
             if u not in existing_handles:
-                stkn = generate_stkn()
-                if use_tracking_token:
-                    url = f"https://www.instagram.com/{u}?stkn={stkn}"
+                if use_reels_format:
+                    url = f"https://www.instagram.com/{u}/reels/"
                 else:
                     url = f"https://www.instagram.com/{u}/"
 
-                ws.append([url])
+                row_idx = ws.max_row + 1
+                cell = ws.cell(row=row_idx, column=1, value=url)
+                cell.hyperlink = url
                 existing_handles.add(u)
                 added_count += 1
 
