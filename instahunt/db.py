@@ -96,9 +96,9 @@ def enqueue_profiles(
             if not clean_u:
                 continue
 
-            # Check if already evaluated in profiles table (unless force=True)
+            # Check if already evaluated or imported in profiles table (unless force=True)
             if not force:
-                cursor.execute("SELECT 1 FROM profiles WHERE username = ? AND status IN ('qualified', 'rejected')", (clean_u,))
+                cursor.execute("SELECT 1 FROM profiles WHERE username = ?", (clean_u,))
                 if cursor.fetchone():
                     continue
 
