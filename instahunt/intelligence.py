@@ -59,6 +59,22 @@ class CommunityAudit:
     provider_used: str
 
 
+@dataclass
+class Pass2AuditorResult:
+    """Gate 3 & Gate 4 Structured Output Schema (Argon Specification)."""
+    username: str
+    is_individual_creator: bool
+    skincare_posts_out_of_10: int
+    is_strictly_skincare_niche: bool
+    detected_city: str
+    detected_state: str
+    city_tier: str  # "Tier 2" | "Tier 3" | "Tier 1" | "Unknown"
+    city_evidence: str
+    passes_all_criteria: bool
+    rejection_reason: Optional[str] = None
+    provider_used: str = "fallback"
+
+
 class BaseLLMProvider:
     """Abstract interface for LLM provider implementations."""
     name: str = "base"
@@ -152,11 +168,13 @@ class GroqProvider(BaseLLMProvider):
 
 
 class OpenRouterProvider(BaseLLMProvider):
-    """OpenRouter Free Tier provider."""
+    """OpenRouter provider supporting Gemini and high-precision models."""
     name = "openrouter"
     DEFAULT_MODELS = [
+        "google/gemini-3.8-flash",
+        "google/gemini-3.7-flash",
+        "google/gemini-4-argon",
         "nvidia/nemotron-3.5-lightning:free",
-        "nvidia/nemotron-3.5-super-vl:free",
         "openrouter/free",
     ]
 
@@ -164,9 +182,10 @@ class OpenRouterProvider(BaseLLMProvider):
         self.api_key = api_key or os.environ.get("OPEN_ROUTER_KEY")
         self.model = model or self.DEFAULT_MODELS[0]
         self.endpoint = "https://openrouter.ai/api/v1/chat/completions"
+        self._insufficient_credits = False
 
     def is_configured(self) -> bool:
-        return bool(self.api_key and len(self.api_key.strip()) > 5)
+        return bool(not self._insufficient_credits and self.api_key and len(self.api_key.strip()) > 5)
 
     def chat_completion(
         self,
@@ -200,6 +219,10 @@ class OpenRouterProvider(BaseLLMProvider):
                     choices = data.get("choices", [])
                     if choices and "message" in choices[0]:
                         return choices[0]["message"].get("content", "")
+                elif resp.status_code == 402:
+                    logger.info("OpenRouter returned 402 Insufficient credits; bypassing OpenRouter.")
+                    self._insufficient_credits = True
+                    break
                 elif resp.status_code in (404, 429):
                     continue
                 else:
@@ -278,9 +301,8 @@ class AIIntelligenceEngine:
 
     def __init__(self, providers: Optional[List[BaseLLMProvider]] = None):
         self.providers = providers if providers is not None else [
-            GroqProvider(),
             OpenRouterProvider(),
-            NvidiaNIMProvider(),
+            GroqProvider(),
         ]
 
     def is_available(self) -> bool:
@@ -698,3 +720,302 @@ Evaluate:
                     if len(dorks) >= max_queries:
                         return dorks
         return dorks
+
+    # --------------------------------------------------------------------------
+    # 4. Gate 3 & Gate 4: Comprehensive Creator Audit (Argon Specification)
+    # --------------------------------------------------------------------------
+    def audit_creator_pass2(self, profile_data: Dict) -> Pass2AuditorResult:
+        """
+        Gate 3 (Mandatory Positive Tier-2/3 City Verification) and
+        Gate 4 (Strict 50% Skincare Content Ratio) Auditor.
+        Implements the exact Argon Specification prompt and structured JSON schema.
+        """
+        username = str(profile_data.get("username", "") or "")
+        full_name = str(profile_data.get("full_name", "") or "")
+        category_name = str(profile_data.get("category_name", "") or "")
+        bio = str(profile_data.get("biography", "") or "")
+        posts = profile_data.get("timeline_posts", []) or []
+
+        # Filter out pinned posts for post evaluation
+        unpinned_posts = [p for p in posts if not p.get("is_pinned", False)] or posts
+        recent_10 = unpinned_posts[:10]
+
+        # Extract post geo-tags (last 12 posts)
+        post_locations = [
+            str(p.get("location_name", "") or "") for p in posts[:12] if p.get("location_name")
+        ]
+        post_locations_unique = list(dict.fromkeys(filter(None, post_locations)))
+
+        # Format recent posts summary
+        posts_summary_lines = []
+        for i, p in enumerate(recent_10):
+            cap = str(p.get("caption", "") or "").replace("\n", " ")[:140]
+            cc = int(p.get("comments_count", 0) or 0)
+            posts_summary_lines.append(f"Post {i+1} ({cc} comments): {cap}")
+        recent_posts_summary = "\n".join(posts_summary_lines) if posts_summary_lines else "None provided"
+
+        prompt = f"""You are a strict Manual Quality Assurance Auditor evaluating Instagram creator profiles for an Indian skincare brand campaign.
+
+Your job is to reject any profile that looks automated, off-niche, engagement-inflated, or located in a Tier-1 metropolitan city.
+
+INPUT DATA FOR @{username}:
+- Full Name: {full_name or 'N/A'}
+- Category: {category_name or 'N/A'}
+- Bio: {bio or 'N/A'}
+- Post Geo-Tags (Last 12 Posts): {json.dumps(post_locations_unique)}
+- Last 10 Unpinned Post Captions & Comment Counts:
+{recent_posts_summary}
+
+EVALUATION RULES:
+1. SKINCARE NICHE (STRICT): Count how many of the last 10 posts are explicitly about skincare (product reviews, routines, sunscreens, serums, acne care, skin barrier, facial care). General makeup, hair styling, OOTD/fashion, travel, or lifestyle vlogs DO NOT count as skincare. Must be >= 5 out of 10.
+2. CREATOR AUTHENTICITY: Must be an individual creator/influencer or dermatologist/esthetician. Reject brand pages, meme/repost pages, salon business catalogs, or fake/bot accounts.
+3. LOCATION VERIFICATION (CRITICAL):
+   - Identify the creator's city from their Bio, Post Geo-Tags, local salon/cafe collaborations, or regional hashtags (e.g., #indoreblogger, #jaipurdiaries).
+   - REJECT immediately if they live in or primarily post from Tier-1 cities/suburbs: Mumbai/MMR/Thane/Navi Mumbai, Delhi/NCR/Noida/Gurgaon/Faridabad/Ghaziabad, Bengaluru, Hyderabad, Chennai, Kolkata, Pune, Ahmedabad, or outside India.
+   - REJECT immediately if no specific city can be verified ("Unknown" or just "India").
+   - APPROVE ONLY if positively verified in an Indian Tier-2 or Tier-3 city.
+
+Respond ONLY with valid JSON matching this exact schema:
+{{
+  "username": "{username}",
+  "is_individual_creator": true,
+  "skincare_posts_out_of_10": 0,
+  "is_strictly_skincare_niche": false,
+  "detected_city": "Exact City Name or Unknown",
+  "detected_state": "State Name or Unknown",
+  "city_tier": "Tier 2 | Tier 3 | Tier 1 | Unknown",
+  "city_evidence": "Exact quote from bio, geo-tag, or hashtag proving city",
+  "passes_all_criteria": false,
+  "rejection_reason": "Clear explanation if rejected, or null if approved"
+}}"""
+
+        content, provider = self.chat_completion(
+            messages=[
+                {"role": "system", "content": "You are a strict manual quality assurance auditor outputting JSON only."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=600,
+            temperature=0.0,
+        )
+
+        parsed = self._extract_json_block(content) if content else None
+        if parsed and "is_individual_creator" in parsed:
+            is_indiv = bool(parsed.get("is_individual_creator", True))
+            skincare_ratio = int(parsed.get("skincare_posts_out_of_10", 0) or 0)
+            is_niche = bool(parsed.get("is_strictly_skincare_niche", skincare_ratio >= 5))
+            detected_city = str(parsed.get("detected_city", "Unknown") or "Unknown")
+            detected_state = str(parsed.get("detected_state", "Unknown") or "Unknown")
+            city_tier = str(parsed.get("city_tier", "Unknown") or "Unknown")
+            city_evidence = str(parsed.get("city_evidence", "") or "")
+
+            # 1. Tier 1 hard reject
+            if city_tier == "Tier 1" or detected_city.lower() in TIER1_METROS:
+                return Pass2AuditorResult(
+                    username=username,
+                    is_individual_creator=is_indiv,
+                    skincare_posts_out_of_10=skincare_ratio,
+                    is_strictly_skincare_niche=is_niche,
+                    detected_city=detected_city,
+                    detected_state=detected_state,
+                    city_tier="Tier 1",
+                    city_evidence=city_evidence,
+                    passes_all_criteria=False,
+                    rejection_reason=f"tier1_metro_{detected_city.lower()}",
+                    provider_used=provider,
+                )
+
+            # 2. Unknown city hard reject (Zero Unknown Tolerance)
+            if detected_city.lower() in ("unknown", "india", "none", "") or city_tier not in ("Tier 2", "Tier 3"):
+                return Pass2AuditorResult(
+                    username=username,
+                    is_individual_creator=is_indiv,
+                    skincare_posts_out_of_10=skincare_ratio,
+                    is_strictly_skincare_niche=is_niche,
+                    detected_city="Unknown",
+                    detected_state=detected_state,
+                    city_tier="Unknown",
+                    city_evidence=city_evidence,
+                    passes_all_criteria=False,
+                    rejection_reason="unverified_city_zero_tolerance",
+                    provider_used=provider,
+                )
+
+            # 3. 50% Skincare ratio rule
+            if skincare_ratio < 5 or not is_niche:
+                return Pass2AuditorResult(
+                    username=username,
+                    is_individual_creator=is_indiv,
+                    skincare_posts_out_of_10=skincare_ratio,
+                    is_strictly_skincare_niche=False,
+                    detected_city=detected_city,
+                    detected_state=detected_state,
+                    city_tier=city_tier,
+                    city_evidence=city_evidence,
+                    passes_all_criteria=False,
+                    rejection_reason=f"low_skincare_ratio_{skincare_ratio}_of_10",
+                    provider_used=provider,
+                )
+
+            # 4. Individual creator rule
+            if not is_indiv:
+                return Pass2AuditorResult(
+                    username=username,
+                    is_individual_creator=False,
+                    skincare_posts_out_of_10=skincare_ratio,
+                    is_strictly_skincare_niche=is_niche,
+                    detected_city=detected_city,
+                    detected_state=detected_state,
+                    city_tier=city_tier,
+                    city_evidence=city_evidence,
+                    passes_all_criteria=False,
+                    rejection_reason="not_individual_creator",
+                    provider_used=provider,
+                )
+
+            return Pass2AuditorResult(
+                username=username,
+                is_individual_creator=True,
+                skincare_posts_out_of_10=skincare_ratio,
+                is_strictly_skincare_niche=True,
+                detected_city=detected_city,
+                detected_state=detected_state,
+                city_tier=city_tier,
+                city_evidence=city_evidence,
+                passes_all_criteria=True,
+                rejection_reason=None,
+                provider_used=provider,
+            )
+
+        # Fallback to local deterministic Pass-2 audit
+        return self._fallback_pass2_audit(profile_data)
+
+    def _fallback_pass2_audit(self, profile_data: Dict) -> Pass2AuditorResult:
+        """Deterministic rule-based Pass 2 audit when LLM is unavailable."""
+        username = str(profile_data.get("username", "") or "")
+        full_name = str(profile_data.get("full_name", "") or "")
+        bio = str(profile_data.get("biography", "") or "")
+        posts = profile_data.get("timeline_posts", []) or []
+
+        # 1. Creator authenticity check (word boundary matching to avoid matching 'clinical' for 'clinic')
+        combined_text = f"{username} {full_name} {bio}".lower()
+        business_markers = ["salon", "spa", "clinic", "academy", "shop", "store", "brand", "official", "memes"]
+        business_pattern = re.compile(r"\b(" + "|".join(re.escape(b) for b in business_markers) + r")\b", re.IGNORECASE)
+        is_individual = not bool(business_pattern.search(combined_text))
+
+        # 2. Location verification (Gate 3)
+        post_locations = [str(p.get("location_name", "") or "") for p in posts[:12] if p.get("location_name")]
+        location_corpus = f"{bio} {' '.join(post_locations)}".lower()
+
+        # Check Tier 1
+        for metro in TIER1_METROS:
+            if re.search(r"\b" + re.escape(metro) + r"\b", location_corpus):
+                return Pass2AuditorResult(
+                    username=username,
+                    is_individual_creator=is_individual,
+                    skincare_posts_out_of_10=0,
+                    is_strictly_skincare_niche=False,
+                    detected_city=metro.title(),
+                    detected_state="N/A",
+                    city_tier="Tier 1",
+                    city_evidence=f"Matched Tier 1 blacklisted city '{metro}'",
+                    passes_all_criteria=False,
+                    rejection_reason=f"tier1_metro_{metro}",
+                    provider_used="rule-based",
+                )
+
+        detected_city = None
+        detected_state = None
+        city_tier = "Unknown"
+        city_evidence = ""
+
+        for city, (tier, state, aliases) in INDIAN_TIER2_TIER3_CITIES.items():
+            for term in [city] + aliases:
+                match = re.search(r"\b" + re.escape(term) + r"\b", location_corpus)
+                if match:
+                    detected_city = city.title()
+                    detected_state = state
+                    city_tier = tier
+                    city_evidence = f"Matched {tier} city '{city.title()}' in bio/geotags"
+                    break
+            if detected_city:
+                break
+
+        if not detected_city or city_tier not in ("Tier 2", "Tier 3"):
+            return Pass2AuditorResult(
+                username=username,
+                is_individual_creator=is_individual,
+                skincare_posts_out_of_10=0,
+                is_strictly_skincare_niche=False,
+                detected_city="Unknown",
+                detected_state="Unknown",
+                city_tier="Unknown",
+                city_evidence="No positive Tier 2/3 city evidence found",
+                passes_all_criteria=False,
+                rejection_reason="unverified_city_zero_tolerance",
+                provider_used="rule-based",
+            )
+
+        # 3. 50% Skincare Rule (Gate 4)
+        unpinned = [p for p in posts if not p.get("is_pinned", False)] or posts
+        recent_10 = unpinned[:10]
+
+        skincare_count = 0
+        skincare_re = re.compile(
+            r"\b(" + "|".join(re.escape(k) for k in SKINCARE_KEYWORDS) + r")\b",
+            re.IGNORECASE,
+        )
+        disqualify_re = re.compile(
+            r"\b(" + "|".join(re.escape(k) for k in DISQUALIFYING_NICHE_KEYWORDS) + r")\b",
+            re.IGNORECASE,
+        )
+
+        for p in recent_10:
+            cap = str(p.get("caption", "") or "").lower()
+            if skincare_re.search(cap) and not disqualify_re.search(cap):
+                skincare_count += 1
+
+        is_niche = (skincare_count >= 5)
+
+        if not is_individual:
+            return Pass2AuditorResult(
+                username=username,
+                is_individual_creator=False,
+                skincare_posts_out_of_10=skincare_count,
+                is_strictly_skincare_niche=is_niche,
+                detected_city=detected_city,
+                detected_state=detected_state,
+                city_tier=city_tier,
+                city_evidence=city_evidence,
+                passes_all_criteria=False,
+                rejection_reason="not_individual_creator",
+                provider_used="rule-based",
+            )
+
+        if not is_niche:
+            return Pass2AuditorResult(
+                username=username,
+                is_individual_creator=True,
+                skincare_posts_out_of_10=skincare_count,
+                is_strictly_skincare_niche=False,
+                detected_city=detected_city,
+                detected_state=detected_state,
+                city_tier=city_tier,
+                city_evidence=city_evidence,
+                passes_all_criteria=False,
+                rejection_reason=f"low_skincare_ratio_{skincare_count}_of_10",
+                provider_used="rule-based",
+            )
+
+        return Pass2AuditorResult(
+            username=username,
+            is_individual_creator=True,
+            skincare_posts_out_of_10=skincare_count,
+            is_strictly_skincare_niche=True,
+            detected_city=detected_city,
+            detected_state=detected_state,
+            city_tier=city_tier,
+            city_evidence=city_evidence,
+            passes_all_criteria=True,
+            rejection_reason=None,
+            provider_used="rule-based",
+        )

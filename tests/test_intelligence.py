@@ -194,3 +194,92 @@ def test_smart_dorks_generation():
     for d in dorks:
         assert "site:instagram.com" in d["query"]
         assert d["city"] in ("Indore", "Surat")
+
+
+def test_pass2_auditor_zero_tolerance_unknown_city():
+    # When no city can be verified, Pass 2 must reject with zero unknown tolerance
+    engine = AIIntelligenceEngine(providers=[])
+    profile = {
+        "username": "skincare_india_glow",
+        "full_name": "Indian Glow",
+        "biography": "Best skincare tips across India! Glowing skin and serums.",
+        "timeline_posts": [
+            {"comments_count": 120, "caption": "Niacinamide routine for glowing skin"} for _ in range(10)
+        ],
+    }
+    res = engine.audit_creator_pass2(profile)
+    assert not res.passes_all_criteria
+    assert res.city_tier == "Unknown"
+    assert res.rejection_reason == "unverified_city_zero_tolerance"
+
+
+def test_pass2_auditor_tier1_rejection():
+    engine = AIIntelligenceEngine(providers=[])
+    profile = {
+        "username": "mumbai_glow_expert",
+        "full_name": "Pooja Mumbai",
+        "biography": "Skincare educator based in Andheri, Mumbai 🧴",
+        "timeline_posts": [
+            {"comments_count": 140, "caption": "Double cleansing guide for glowing skin"} for _ in range(10)
+        ],
+    }
+    res = engine.audit_creator_pass2(profile)
+    assert not res.passes_all_criteria
+    assert res.city_tier == "Tier 1"
+    assert "tier1_metro" in res.rejection_reason
+
+
+def test_pass2_auditor_skincare_ratio_rule():
+    # Only 2 out of 10 posts are skincare, 8 are fashion/lifestyle -> must reject (< 50%)
+    engine = AIIntelligenceEngine(providers=[])
+    profile = {
+        "username": "jaipur_fashion_girl",
+        "full_name": "Simran Jaipur",
+        "biography": "Jaipur creator ✨ Fashion & occasional skincare",
+        "timeline_posts": [
+            {"comments_count": 120, "caption": "My favorite sunscreen review"},
+            {"comments_count": 130, "caption": "Acne routine with salicylic acid"},
+            {"comments_count": 110, "caption": "OOTD styling my lehenga for wedding"},
+            {"comments_count": 115, "caption": "Cafe hopping and fashion vlog"},
+            {"comments_count": 125, "caption": "GRWM outfit for summer"},
+            {"comments_count": 135, "caption": "Zara haul and try on video"},
+            {"comments_count": 140, "caption": "Saree draping tutorial in Jaipur"},
+            {"comments_count": 110, "caption": "Jewelry collection styling"},
+            {"comments_count": 105, "caption": "My daily vlog in Jaipur"},
+            {"comments_count": 115, "caption": "Street food tour in pink city"},
+        ],
+    }
+    res = engine.audit_creator_pass2(profile)
+    assert not res.passes_all_criteria
+    assert res.skincare_posts_out_of_10 == 2
+    assert "low_skincare_ratio" in res.rejection_reason
+
+
+def test_pass2_auditor_qualified_tier2_creator():
+    # Positive Tier 2 proof (Indore) + >= 50% skincare posts + individual creator
+    engine = AIIntelligenceEngine(providers=[])
+    profile = {
+        "username": "indore_skin_notes",
+        "full_name": "Rhea S - Skincare",
+        "biography": "Indore | Certified aesthetician sharing barrier care & honest sunscreen reviews 🧴",
+        "timeline_posts": [
+            {"comments_count": 120, "caption": "Ceramide barrier repair moisturizer review in Indore"},
+            {"comments_count": 130, "caption": "How to treat active acne with salicylic acid"},
+            {"comments_count": 110, "caption": "Sunscreen texture testing with UV camera"},
+            {"comments_count": 115, "caption": "Morning skincare routine for glowing skin"},
+            {"comments_count": 125, "caption": "Niacinamide vs Vitamin C for hyperpigmentation"},
+            {"comments_count": 135, "caption": "Pharmacy skincare gems under 500"},
+            {"comments_count": 140, "caption": "Double cleansing routine for clogged pores"},
+            {"comments_count": 110, "caption": "Retinol dos and donts for beginners"},
+            {"comments_count": 105, "caption": "Centella soothing serum test"},
+            {"comments_count": 115, "caption": "My current night time routine"},
+        ],
+    }
+    res = engine.audit_creator_pass2(profile)
+    assert res.passes_all_criteria
+    assert res.city_tier == "Tier 2"
+    assert res.detected_city == "Indore"
+    assert res.skincare_posts_out_of_10 >= 5
+    assert res.is_individual_creator is True
+    assert res.rejection_reason is None
+

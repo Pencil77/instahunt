@@ -13,10 +13,21 @@ DEFAULT_DB_PATH = DATA_DIR / "instahunt.db"
 DEFAULT_SHEET_PATH = DATA_DIR / "StormShadow.xlsx"
 DEFAULT_OUTPUT_DIR = BASE_DIR / "exports"
 
-# Engagement Criteria
+# Engagement Criteria (Gate 1: Robust Trimmed Comment Math)
 MIN_AVG_COMMENTS = 100
 SAMPLE_POSTS_COUNT = 12
 EXCLUDE_PINNED_POSTS = True
+MIN_UNPINNED_POSTS = 8
+TRIMMED_MEAN_COMMENTS_THRESHOLD = 100.0
+MEDIAN_COMMENTS_FLOOR = 75.0
+CONSISTENCY_MIN_COUNT = 6
+CONSISTENCY_MIN_COMMENTS = 65.0
+DROP_TOP_POSTS = 2
+DROP_BOTTOM_POSTS = 1
+MIN_SKINCARE_POST_RATIO = 0.50
+
+# Giveaway Indicators Pattern
+GIVEAWAY_PATTERN_STR = r"(?:giveaway|tag\s+3\s+friends|follow\s+to\s+win|win\s+a\b|lucky\s+winner|contest\s+alert)"
 
 # Pacing & Rate Limiting
 MIN_JITTER_SECONDS = 12.0
@@ -24,13 +35,40 @@ MAX_JITTER_SECONDS = 25.0
 BATCH_SIZE = 50
 COOLDOWN_SLEEP_SECONDS = 300  # 5 minutes pause every batch
 
-# Hard Tier 1 Metros Blacklist (Strictly Disqualified)
-# Matches any mention in bio, location tags, or recent captions
+# Hard Tier 1 Metros & Suburbs Blacklist (Gate 2: Strictly Disqualified)
+# Comprehensive metro, MMR, NCR, and satellite localities
 TIER1_METROS = {
+    # Mumbai MMR
     "mumbai": "Tier 1",
     "bombay": "Tier 1",
     "navi mumbai": "Tier 1",
     "thane": "Tier 1",
+    "kalyan": "Tier 1",
+    "dombivli": "Tier 1",
+    "vasai": "Tier 1",
+    "virar": "Tier 1",
+    "mira bhayandar": "Tier 1",
+    "ulhasnagar": "Tier 1",
+    "bhiwandi": "Tier 1",
+    "panvel": "Tier 1",
+    "bandra": "Tier 1",
+    "andheri": "Tier 1",
+    "juhu": "Tier 1",
+    "colaba": "Tier 1",
+    "worli": "Tier 1",
+    "powai": "Tier 1",
+    "borivali": "Tier 1",
+    "malad": "Tier 1",
+    "goregaon": "Tier 1",
+    "dadar": "Tier 1",
+    "chembur": "Tier 1",
+    "mulund": "Tier 1",
+    "vashi": "Tier 1",
+    "kharghar": "Tier 1",
+    "nerul": "Tier 1",
+    "belapur": "Tier 1",
+
+    # Delhi NCR
     "delhi": "Tier 1",
     "new delhi": "Tier 1",
     "ncr": "Tier 1",
@@ -41,16 +79,152 @@ TIER1_METROS = {
     "gurugram": "Tier 1",
     "faridabad": "Tier 1",
     "ghaziabad": "Tier 1",
+    "indirapuram": "Tier 1",
+    "vaishali": "Tier 1",
+    "rohini": "Tier 1",
+    "dwarka": "Tier 1",
+    "saket": "Tier 1",
+    "hauz khas": "Tier 1",
+    "vasant kunj": "Tier 1",
+    "connaught place": "Tier 1",
+    "lajpat nagar": "Tier 1",
+    "pitampura": "Tier 1",
+    "janakpuri": "Tier 1",
+    "karol bagh": "Tier 1",
+    "south ex": "Tier 1",
+    "cyber hub": "Tier 1",
+    "dlf phase": "Tier 1",
+
+    # Bengaluru Urban
     "bengaluru": "Tier 1",
     "bangalore": "Tier 1",
+    "blr": "Tier 1",
+    "whitefield": "Tier 1",
+    "koramangala": "Tier 1",
+    "indiranagar": "Tier 1",
+    "hsr layout": "Tier 1",
+    "jayanagar": "Tier 1",
+    "jp nagar": "Tier 1",
+    "marathahalli": "Tier 1",
+    "electronic city": "Tier 1",
+    "bellandur": "Tier 1",
+    "sarjapur": "Tier 1",
+    "hebbal": "Tier 1",
+    "malleshwaram": "Tier 1",
+    "yelahanka": "Tier 1",
+    "btm layout": "Tier 1",
+    "banashankari": "Tier 1",
+
+    # Hyderabad Metro
     "hyderabad": "Tier 1",
+    "hyd": "Tier 1",
     "secunderabad": "Tier 1",
+    "cyberabad": "Tier 1",
+    "gachibowli": "Tier 1",
+    "banjara hills": "Tier 1",
+    "jubilee hills": "Tier 1",
+    "madhapur": "Tier 1",
+    "hitech city": "Tier 1",
+    "kondapur": "Tier 1",
+    "kukatpally": "Tier 1",
+    "miyapur": "Tier 1",
+    "begumpet": "Tier 1",
+    "sainikpuri": "Tier 1",
+    "manikonda": "Tier 1",
+    "kokapet": "Tier 1",
+    "shamshabad": "Tier 1",
+
+    # Chennai Metro
     "chennai": "Tier 1",
     "madras": "Tier 1",
+    "adyar": "Tier 1",
+    "anna nagar": "Tier 1",
+    "t nagar": "Tier 1",
+    "velachery": "Tier 1",
+    "mylapore": "Tier 1",
+    "nungambakkam": "Tier 1",
+    "besant nagar": "Tier 1",
+    "tambaram": "Tier 1",
+    "guindy": "Tier 1",
+    "porur": "Tier 1",
+    "omr": "Tier 1",
+    "ecr": "Tier 1",
+    "vadapalani": "Tier 1",
+    "thiruvanmiyur": "Tier 1",
+
+    # Kolkata Metro
     "kolkata": "Tier 1",
     "calcutta": "Tier 1",
+    "salt lake": "Tier 1",
+    "bidhannagar": "Tier 1",
+    "new town": "Tier 1",
+    "rajarhat": "Tier 1",
+    "howrah": "Tier 1",
+    "ballygunge": "Tier 1",
+    "alipore": "Tier 1",
+    "park street": "Tier 1",
+    "dum dum": "Tier 1",
+    "behala": "Tier 1",
+    "jadavpur": "Tier 1",
+    "tollygunge": "Tier 1",
+    "garia": "Tier 1",
+
+    # Pune Metro
     "pune": "Tier 1",
+    "pimpri": "Tier 1",
+    "chinchwad": "Tier 1",
+    "pcmc": "Tier 1",
+    "kothrud": "Tier 1",
+    "viman nagar": "Tier 1",
+    "koregaon park": "Tier 1",
+    "kalyani nagar": "Tier 1",
+    "hinjewadi": "Tier 1",
+    "baner": "Tier 1",
+    "wakad": "Tier 1",
+    "aundh": "Tier 1",
+    "hadapsar": "Tier 1",
+    "magarpatta": "Tier 1",
+    "kharadi": "Tier 1",
+    "shivajinagar": "Tier 1",
+    "deccan": "Tier 1",
+    "sinhagad road": "Tier 1",
+
+    # Ahmedabad Metro
     "ahmedabad": "Tier 1",
+    "amdavad": "Tier 1",
+    "gandhinagar": "Tier 1",
+    "sg highway": "Tier 1",
+    "navrangpura": "Tier 1",
+    "satellite": "Tier 1",
+    "bopal": "Tier 1",
+    "prahlad nagar": "Tier 1",
+    "vastrapur": "Tier 1",
+    "maninagar": "Tier 1",
+    "chandkheda": "Tier 1",
+    "gota": "Tier 1",
+    "bodakdev": "Tier 1",
+    "thaltej": "Tier 1",
+    "cg road": "Tier 1",
+
+    # International / Non-Indian Locations
+    "dubai": "International",
+    "uae": "International",
+    "london": "International",
+    "uk": "International",
+    "united kingdom": "International",
+    "usa": "International",
+    "united states": "International",
+    "canada": "International",
+    "toronto": "International",
+    "australia": "International",
+    "singapore": "International",
+    "nepal": "International",
+    "kathmandu": "International",
+    "dhaka": "International",
+    "bangladesh": "International",
+    "pakistan": "International",
+    "karachi": "International",
+    "lahore": "International",
 }
 
 # Indian Tier 2 and Tier 3 Cities Database
@@ -235,6 +409,25 @@ INDIAN_TIER2_TIER3_CITIES = {
     "shillong": ("Tier 3", "Meghalaya", []),
     "agartala": ("Tier 3", "Tripura", []),
     "imphal": ("Tier 3", "Manipur", []),
+    "aizawl": ("Tier 3", "Mizoram", []),
+    "gangtok": ("Tier 3", "Sikkim", []),
+    "dibrugarh": ("Tier 3", "Assam", []),
+
+    # Additional & Canonical mappings from specification
+    "goa": ("Tier 3", "Goa", ["panaji", "margao", "panjim"]),
+    "panaji": ("Tier 3", "Goa", ["panjim"]),
+    "margao": ("Tier 3", "Goa", ["madgaon"]),
+    "roorkee": ("Tier 3", "Uttarakhand", []),
+    "puri": ("Tier 3", "Odisha", []),
+    "durg": ("Tier 3", "Chhattisgarh", ["bhilai"]),
+    "bardhaman": ("Tier 3", "West Bengal", ["burdwan"]),
+    "ernakulam": ("Tier 2", "Kerala", ["kochi", "cochin"]),
+    "aurangabad": ("Tier 2", "Maharashtra", ["chhatrapati sambhajinagar"]),
+    "mysuru": ("Tier 2", "Karnataka", ["mysore"]),
+    "mangaluru": ("Tier 2", "Karnataka", ["mangalore"]),
+    "hubballi-dharwad": ("Tier 2", "Karnataka", ["hubli", "dharwad"]),
+    "belagavi": ("Tier 2", "Karnataka", ["belgaum"]),
+    "shivamogga": ("Tier 3", "Karnataka", ["shimoga"]),
 }
 
 # Core Skincare Keywords for Relevance Scoring (Pan-India & English)
