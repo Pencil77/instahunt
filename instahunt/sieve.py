@@ -54,6 +54,26 @@ class SieveResult:
     rejection_reason: Optional[str] = None
     evidence: str = ""
 
+    @property
+    def gate1_passed(self) -> bool:
+        """Gate 1: Robust Trimmed Comment Math."""
+        return (
+            self.trimmed_mean_comments >= 100.0
+            and self.median_comments >= 75.0
+            and self.consistency_count >= 6
+            and self.unpinned_posts_count >= 8
+        )
+
+    @property
+    def gate2_passed(self) -> bool:
+        """Gate 2: Tier-1 Metro Blacklist."""
+        return not self.has_tier1_match
+
+    @property
+    def gate4_passed(self) -> bool:
+        """Gate 4: Skincare Niche Purity."""
+        return self.is_skincare
+
 
 class DeterministicSieve:
     def __init__(

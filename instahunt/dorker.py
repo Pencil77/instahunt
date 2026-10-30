@@ -40,10 +40,16 @@ class SearchDorker:
         queries = []
         cities = target_cities or list(INDIAN_TIER2_TIER3_CITIES.keys())
 
+        negative_terms = (
+            '-fashion -outfit -ootd -saree -vlog -comedy -couple -makeup '
+            '-mumbai -delhi -bangalore -hyderabad -chennai -kolkata -pune -ahmedabad'
+        )
+
         templates = [
-            'site:instagram.com "skincare" "{city}"',
-            'site:instagram.com ("skincare routine" OR "skin care") "{city}"',
-            'site:instagram.com ("skincare blogger" OR "skincare creator") "{city}"',
+            f'site:instagram.com "skincare" "{{city}}" {negative_terms}',
+            f'site:instagram.com ("dermatologist" OR "skin clinic" OR "skin doctor") "{{city}}" {negative_terms}',
+            f'site:instagram.com ("skincare routine" OR "barrier repair" OR "serums") "{{city}}" {negative_terms}',
+            f'site:instagram.com ("skincare educator" OR "skin influencer") "{{city}}" {negative_terms}',
         ]
 
         for city in cities:
@@ -95,14 +101,20 @@ class SearchDorker:
         return []
 
     def search_city(self, city: str) -> List[str]:
-        """Run search dorks for a specific city and return discovered handles."""
+        """Run targeted search dorks for a specific city with negative exclusions."""
         canonical = city.title()
         discovered: Set[str] = set()
 
-        q1 = f'site:instagram.com "skincare" "{canonical}"'
-        q2 = f'site:instagram.com "skincare blogger" "{canonical}"'
+        negative_filter = (
+            '-fashion -outfit -ootd -saree -vlog -comedy -couple -makeup '
+            '-mumbai -delhi -bangalore -hyderabad -chennai -kolkata -pune -ahmedabad'
+        )
 
-        for q in [q1, q2]:
+        q1 = f'site:instagram.com "skincare" "{canonical}" {negative_filter}'
+        q2 = f'site:instagram.com ("dermatologist" OR "skin clinic" OR "skin educator") "{canonical}" {negative_filter}'
+        q3 = f'site:instagram.com ("barrier repair" OR "serums" OR "acne") "{canonical}" {negative_filter}'
+
+        for q in [q1, q2, q3]:
             h1 = self.dork_bing(q)
             discovered.update(h1)
             h2 = self.dork_duckduckgo_lite(q)

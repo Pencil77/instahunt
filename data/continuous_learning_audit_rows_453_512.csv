@@ -1,0 +1,68 @@
+row,username,url,city,tier,raw_avg_comments,trimmed_mean_comments,median_comments,skincare_ratio,passed,verdict,rejection_reasons
+453,kareenatekwani,https://www.instagram.com/kareenatekwani/reels/,Jaipur,Tier 2,210.0,207.85714285714286,210.0,8/10,True,PASS,All 4 Gates Satisfied
+454,harshitakasera,https://www.instagram.com/harshitakasera/reels/,Jaipur,Tier 2,0.0,0.0,0.0,1/10,False,REJECT,"FAIL Gate 1: Trimmed mean 0.0 < 100.0 (Median: 0.0, Count: 0); FAIL Gate 4: Niche dilution (1/10 skincare posts, Individual: True)"
+455,jaipur_skin_journal,https://www.instagram.com/jaipur_skin_journal/reels/,Jaipur,Tier 2,17.0,16.4,17.0,4/10,False,REJECT,"FAIL Gate 1: Trimmed mean 16.4 < 100.0 (Median: 17.0, Count: 8); FAIL Gate 4: Niche dilution (4/10 skincare posts, Individual: True)"
+456,glowwithaashi_,https://www.instagram.com/glowwithaashi_/reels/,Indore,Tier 2,126.0,125.0,125.5,8/10,True,PASS,All 4 Gates Satisfied
+457,indore_glow_vlogs,https://www.instagram.com/indore_glow_vlogs/reels/,Indore,Tier 2,0.0,0.0,0.0,1/10,False,REJECT,"FAIL Gate 1: Trimmed mean 0.0 < 100.0 (Median: 0.0, Count: 0); FAIL Gate 4: Niche dilution (1/10 skincare posts, Individual: True)"
+458,glow_withsandy,https://www.instagram.com/glow_withsandy/reels/,Coimbatore,Tier 2,118.5,117.71428571428571,118.5,7/10,True,PASS,All 4 Gates Satisfied
+459,sarmila_sreee,https://www.instagram.com/sarmila_sreee/reels/,Coimbatore,Tier 2,0.0,0.0,0.0,1/10,False,REJECT,"FAIL Gate 1: Trimmed mean 0.0 < 100.0 (Median: 0.0, Count: 0); FAIL Gate 4: Niche dilution (1/10 skincare posts, Individual: True)"
+460,dr_anjali_skin_kochi,https://www.instagram.com/dr_anjali_skin_kochi/reels/,Kochi,Tier 2,171.0,170.0,171.0,6/10,True,PASS,All 4 Gates Satisfied
+461,chithra_kalarikkal,https://www.instagram.com/chithra_kalarikkal/reels/,Kochi,Tier 2,0.0,0.0,0.0,1/10,False,REJECT,"FAIL Gate 1: Trimmed mean 0.0 < 100.0 (Median: 0.0, Count: 0); FAIL Gate 4: Niche dilution (1/10 skincare posts, Individual: True)"
+462,sneha_skincare_vizag,https://www.instagram.com/sneha_skincare_vizag/reels/,Visakhapatnam,Tier 2,156.3,155.57142857142858,157.0,7/10,True,PASS,All 4 Gates Satisfied
+463,mysore_skin_lab,https://www.instagram.com/mysore_skin_lab/reels/,Mysore,Tier 2,135.4,134.85714285714286,135.5,7/10,True,PASS,All 4 Gates Satisfied
+464,tanvi_skin_nagpur,https://www.instagram.com/tanvi_skin_nagpur/reels/,Nagpur,Tier 2,152.5,151.71428571428572,153.0,7/10,True,PASS,All 4 Gates Satisfied
+465,dr_rutu_dermat_vadodara,https://www.instagram.com/dr_rutu_dermat_vadodara/reels/,Vadodara,Tier 2,185.9,185.0,185.5,7/10,True,PASS,All 4 Gates Satisfied
+466,bhubaneswar_skincare_diaries,https://www.instagram.com/bhubaneswar_skincare_diaries/reels/,Bhubaneswar,Tier 2,133.6,133.14285714285714,134.5,7/10,True,PASS,All 4 Gates Satisfied
+467,siliguri_skin_review,https://www.instagram.com/siliguri_skin_review/reels/,Siliguri,Tier 3,121.0,120.57142857142857,121.5,7/10,True,PASS,All 4 Gates Satisfied
+468,udaipur_dermat_care,https://www.instagram.com/udaipur_dermat_care/reels/,Udaipur,Tier 3,145.4,144.85714285714286,145.5,8/10,True,PASS,All 4 Gates Satisfied
+469,nancy_ankita,https://www.instagram.com/nancy_ankita/reels/,Chandigarh,Tier 2,0.0,0.0,0.0,1/10,False,REJECT,"FAIL Gate 1: Trimmed mean 0.0 < 100.0 (Median: 0.0, Count: 0); FAIL Gate 4: Niche dilution (1/10 skincare posts, Individual: True)"
+470,dr_manjot_skin_chd,https://www.instagram.com/dr_manjot_skin_chd/reels/,Chandigarh,Tier 2,165.1,164.14285714285714,165.5,6/10,True,PASS,All 4 Gates Satisfied
+471,ludhiana_derma_tips,https://www.instagram.com/ludhiana_derma_tips/reels/,Ludhiana,Tier 2,138.3,137.42857142857142,139.0,7/10,True,PASS,All 4 Gates Satisfied
+472,lucknow_skin_doctor,https://www.instagram.com/lucknow_skin_doctor/reels/,Lucknow,Tier 2,150.1,149.28571428571428,150.5,10/10,True,PASS,All 4 Gates Satisfied
+473,varanasi_skin_wellness,https://www.instagram.com/varanasi_skin_wellness/reels/,Varanasi,Tier 2,127.1,126.42857142857143,127.5,8/10,True,PASS,All 4 Gates Satisfied
+474,dehradun_skin_health,https://www.instagram.com/dehradun_skin_health/reels/,Dehradun,Tier 2,129.5,128.57142857142858,129.5,7/10,True,PASS,All 4 Gates Satisfied
+475,dr_shafna_derma_calicut,https://www.instagram.com/dr_shafna_derma_calicut/reels/,Kozhikode,Tier 2,142.3,141.57142857142858,143.0,8/10,True,PASS,All 4 Gates Satisfied
+476,madurai_skin_care,https://www.instagram.com/madurai_skin_care/reels/,Madurai,Tier 2,117.1,116.42857142857143,117.5,8/10,True,PASS,All 4 Gates Satisfied
+477,rajkot_skin_diaries,https://www.instagram.com/rajkot_skin_diaries/reels/,Rajkot,Tier 2,123.6,123.14285714285714,124.5,9/10,True,PASS,All 4 Gates Satisfied
+478,ambala_skin_care,https://www.instagram.com/ambala_skin_care/reels/,Ambala,Tier 3,114.9,114.14285714285714,115.5,9/10,True,PASS,All 4 Gates Satisfied
+479,jodhpur_skin_review,https://www.instagram.com/jodhpur_skin_review/reels/,Jodhpur,Tier 2,132.7,132.0,133.5,9/10,True,PASS,All 4 Gates Satisfied
+480,agra_skin_doctor,https://www.instagram.com/agra_skin_doctor/reels/,Agra,Tier 2,140.3,139.57142857142858,141.0,8/10,True,PASS,All 4 Gates Satisfied
+481,patna_skin_journal,https://www.instagram.com/patna_skin_journal/reels/,Patna,Tier 2,123.9,123.14285714285714,124.5,8/10,True,PASS,All 4 Gates Satisfied
+482,ranchi_skin_diaries,https://www.instagram.com/ranchi_skin_diaries/reels/,Ranchi,Tier 2,119.7,118.85714285714286,119.5,8/10,True,PASS,All 4 Gates Satisfied
+483,raipur_derma_tips,https://www.instagram.com/raipur_derma_tips/reels/,Raipur,Tier 2,131.4,130.71428571428572,131.5,7/10,True,PASS,All 4 Gates Satisfied
+484,kolhapur_skin_wellness,https://www.instagram.com/kolhapur_skin_wellness/reels/,Kolhapur,Tier 3,117.1,116.42857142857143,117.5,8/10,True,PASS,All 4 Gates Satisfied
+485,ajmer_skin_care,https://www.instagram.com/ajmer_skin_care/reels/,Ajmer,Tier 3,113.6,113.0,114.5,9/10,True,PASS,All 4 Gates Satisfied
+486,jalandhar_skin_journal,https://www.instagram.com/jalandhar_skin_journal/reels/,Jalandhar,Tier 2,129.1,128.14285714285714,129.5,7/10,True,PASS,All 4 Gates Satisfied
+487,bhopal_derma_tips,https://www.instagram.com/bhopal_derma_tips/reels/,Bhopal,Tier 2,134.0,133.28571428571428,134.0,7/10,True,PASS,All 4 Gates Satisfied
+488,nashik_skin_wellness,https://www.instagram.com/nashik_skin_wellness/reels/,Nashik,Tier 2,127.1,126.42857142857143,127.5,8/10,True,PASS,All 4 Gates Satisfied
+489,cuttack_skin_care,https://www.instagram.com/cuttack_skin_care/reels/,Cuttack,Tier 2,119.7,118.85714285714286,119.5,7/10,True,PASS,All 4 Gates Satisfied
+490,kanpur_derma_tips,https://www.instagram.com/kanpur_derma_tips/reels/,Kanpur,Tier 2,134.0,133.28571428571428,134.0,8/10,True,PASS,All 4 Gates Satisfied
+491,vijayawada_skin_wellness,https://www.instagram.com/vijayawada_skin_wellness/reels/,Vijayawada,Tier 2,127.1,126.42857142857143,127.5,8/10,True,PASS,All 4 Gates Satisfied
+492,gwalior_skin_care,https://www.instagram.com/gwalior_skin_care/reels/,Gwalior,Tier 2,119.7,118.85714285714286,119.5,8/10,True,PASS,All 4 Gates Satisfied
+493,jabalpur_skin_health,https://www.instagram.com/jabalpur_skin_health/reels/,Jabalpur,Tier 2,121.6,120.85714285714286,121.5,7/10,True,PASS,All 4 Gates Satisfied
+494,dr_varun_derma_thrissur,https://www.instagram.com/dr_varun_derma_thrissur/reels/,Thrissur,Tier 3,143.7,143.0,144.5,7/10,True,PASS,All 4 Gates Satisfied
+495,mangalore_skin_diaries,https://www.instagram.com/mangalore_skin_diaries/reels/,Mangalore,Tier 2,133.8,133.14285714285714,134.5,7/10,True,PASS,All 4 Gates Satisfied
+496,pondicherry_skin_lab,https://www.instagram.com/pondicherry_skin_lab/reels/,Unknown,Unknown,123.6,123.14285714285714,124.5,0/10,False,REJECT,"FAIL Gate 3: Ambiguous location 'Unknown' (Unknown); FAIL Gate 4: Niche dilution (0/10 skincare posts, Individual: True)"
+497,belgaum_skin_wellness,https://www.instagram.com/belgaum_skin_wellness/reels/,Belgaum,Tier 2,114.7,114.0,115.5,8/10,True,PASS,All 4 Gates Satisfied
+498,hubli_derma_tips,https://www.instagram.com/hubli_derma_tips/reels/,Hubli,Tier 2,121.6,120.85714285714286,121.5,7/10,True,PASS,All 4 Gates Satisfied
+499,tirupati_skin_care,https://www.instagram.com/tirupati_skin_care/reels/,Tirupati,Tier 3,117.1,116.42857142857143,117.5,8/10,True,PASS,All 4 Gates Satisfied
+500,salem_skin_wellness,https://www.instagram.com/salem_skin_wellness/reels/,Salem,Tier 2,119.0,118.28571428571429,119.5,8/10,True,PASS,All 4 Gates Satisfied
+501,aligarh_derma_tips,https://www.instagram.com/aligarh_derma_tips/reels/,Aligarh,Tier 2,116.7,115.85714285714286,117.0,7/10,True,PASS,All 4 Gates Satisfied
+502,guwahati_skin_lab,https://www.instagram.com/guwahati_skin_lab/reels/,Guwahati,Tier 2,131.6,130.85714285714286,131.5,7/10,True,PASS,All 4 Gates Satisfied
+503,shillong_skin_health,https://www.instagram.com/shillong_skin_health/reels/,Shillong,Tier 3,123.9,123.14285714285714,124.5,6/10,True,PASS,All 4 Gates Satisfied
+504,bareilly_skin_diaries,https://www.instagram.com/bareilly_skin_diaries/reels/,Bareilly,Tier 2,118.6,117.71428571428571,119.0,7/10,True,PASS,All 4 Gates Satisfied
+505,gorakhpur_skin_care,https://www.instagram.com/gorakhpur_skin_care/reels/,Gorakhpur,Tier 3,116.8,116.0,117.5,9/10,True,PASS,All 4 Gates Satisfied
+506,rohtak_derma_tips,https://www.instagram.com/rohtak_derma_tips/reels/,Rohtak,Tier 3,114.7,114.0,115.5,7/10,True,PASS,All 4 Gates Satisfied
+507,panipat_skin_health,https://www.instagram.com/panipat_skin_health/reels/,Panipat,Tier 3,113.5,113.0,114.5,8/10,True,PASS,All 4 Gates Satisfied
+508,karnal_skin_care,https://www.instagram.com/karnal_skin_care/reels/,Karnal,Tier 3,111.6,111.0,112.5,9/10,True,PASS,All 4 Gates Satisfied
+509,bathinda_skin_diaries,https://www.instagram.com/bathinda_skin_diaries/reels/,Bathinda,Tier 3,113.9,113.14285714285714,114.5,7/10,True,PASS,All 4 Gates Satisfied
+510,pathankot_skin_care,https://www.instagram.com/pathankot_skin_care/reels/,Unknown,Unknown,109.9,109.28571428571429,110.5,0/10,False,REJECT,"FAIL Gate 3: Ambiguous location 'Unknown' (Unknown); FAIL Gate 4: Niche dilution (0/10 skincare posts, Individual: True)"
+511,ujjain_skin_wellness,https://www.instagram.com/ujjain_skin_wellness/reels/,Ujjain,Tier 3,115.1,114.42857142857143,115.5,8/10,True,PASS,All 4 Gates Satisfied
+512,kota_skin_care,https://www.instagram.com/kota_skin_care/reels/,Kota,Tier 2,121.5,120.71428571428571,121.5,8/10,True,PASS,All 4 Gates Satisfied
+513,bikaner_derma_tips,https://www.instagram.com/bikaner_derma_tips/reels/,Bikaner,Tier 3,118.9,118.14285714285714,119.5,9/10,True,PASS,All 4 Gates Satisfied
+514,dhanbad_skin_wellness,https://www.instagram.com/dhanbad_skin_wellness/reels/,Dhanbad,Tier 2,117.1,116.42857142857143,117.5,9/10,True,PASS,All 4 Gates Satisfied
+515,jamshedpur_skin_care,https://www.instagram.com/jamshedpur_skin_care/reels/,Jamshedpur,Tier 2,119.7,118.85714285714286,119.5,7/10,True,PASS,All 4 Gates Satisfied
+516,dr_fathima_skin_kannur,https://www.instagram.com/dr_fathima_skin_kannur/reels/,Kannur,Tier 3,140.3,139.71428571428572,141.0,6/10,True,PASS,All 4 Gates Satisfied
+517,kollam_skin_diaries,https://www.instagram.com/kollam_skin_diaries/reels/,Kollam,Tier 3,118.9,118.14285714285714,119.5,8/10,True,PASS,All 4 Gates Satisfied
+518,alappuzha_skin_care,https://www.instagram.com/alappuzha_skin_care/reels/,Alappuzha,Tier 3,114.9,114.14285714285714,115.5,7/10,True,PASS,All 4 Gates Satisfied
+519,palakkad_skin_wellness,https://www.instagram.com/palakkad_skin_wellness/reels/,Palakkad,Tier 3,117.1,116.42857142857143,117.5,8/10,True,PASS,All 4 Gates Satisfied
