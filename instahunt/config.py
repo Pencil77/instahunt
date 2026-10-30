@@ -322,6 +322,7 @@ INDIAN_TIER2_TIER3_CITIES = {
     "coimbatore": ("Tier 2", "Tamil Nadu", ["kovai", "manchester of south india"]),
     "madurai": ("Tier 2", "Tamil Nadu", []),
     "tiruchirappalli": ("Tier 2", "Tamil Nadu", ["trichy"]),
+    "trichy": ("Tier 2", "Tamil Nadu", ["tiruchirappalli"]),
     "salem": ("Tier 2", "Tamil Nadu", []),
     "tiruppur": ("Tier 3", "Tamil Nadu", ["tirupur"]),
     "erode": ("Tier 3", "Tamil Nadu", []),
